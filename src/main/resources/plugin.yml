@@ -1,0 +1,9 @@
+## YAML Template.
+---
+name: ModWorlds
+main: com.modwiz.modworlds.ModWorlds
+version: 0.0.1
+authors: [Starbuck Johnson]
+commands:
+  worldmanager:
+    aliases: [wm, worldman, mv, mw, modworlds]
