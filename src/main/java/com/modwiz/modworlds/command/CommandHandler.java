@@ -7,6 +7,7 @@ package com.modwiz.modworlds.command;
 import com.modwiz.modperms.players.PermPlayer;
 import com.modwiz.modworlds.ModWorlds;
 import org.bukkit.ChatColor;
+import org.bukkit.GameMode;
 import org.bukkit.Location;
 import org.bukkit.World;
 import org.bukkit.WorldCreator;
@@ -14,6 +15,7 @@ import org.bukkit.WorldType;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
+import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.entity.Player;
 
 /**
@@ -117,6 +119,8 @@ public class CommandHandler implements CommandExecutor{
             cs.sendMessage(ChatColor.DARK_AQUA + "/mw info <worldName> - displays info about a world.");
             cs.sendMessage(ChatColor.DARK_AQUA + "/mw alias <worldAlias> or /mw alias <worldName> <aliasName> - sets the display name of a world.");
             cs.sendMessage(ChatColor.DARK_AQUA + "/mw list - List's all worlds.");
+            cs.sendMessage(ChatColor.DARK_AQUA + "/mw mode <gamemode> or /mw mode <worldName> <gamemode> - Set default world gamemode.");
+            cs.sendMessage(ChatColor.DARK_AQUA + "/mw load - loads configuration from disk.");
         } else if (args[0].equalsIgnoreCase("alias")) {
             if (args.length == 2) {
                 if (cs instanceof Player) {
@@ -171,11 +175,61 @@ public class CommandHandler implements CommandExecutor{
             PermPlayer pp = modWorlds.getPlayerManager().getPlayer(cs);
             if (pp.hasPermission("modworlds.*") || pp.hasPermission("modworlds.load")) {
                 modWorlds.reloadConfig();
-                modWorlds.onEnable();
+                modWorlds.loadSettings();
                 cs.sendMessage(ChatColor.DARK_AQUA + "Config has been loaded from disk.");
                 
             } else {
                 cs.sendMessage(ChatColor.RED + "Sorry insufficent permissions.");
+            }
+        } else if (args[0].equalsIgnoreCase("mode")) {
+            PermPlayer pp = modWorlds.getPlayerManager().getPlayer(cs);
+            if (args.length == 2) {
+                if (cs instanceof Player) {
+                    Player p = (Player) cs;
+                    String worldName = p.getWorld().getName();
+                    FileConfiguration config = modWorlds.getConfig();
+                    GameMode gamemode;
+                    if (args[1].equalsIgnoreCase("1")) {
+                        gamemode= GameMode.CREATIVE;
+                    } else if (args[1].equalsIgnoreCase("2")) {
+                        gamemode = GameMode.ADVENTURE;
+                    } else if (args[1].equalsIgnoreCase("0")) {
+                        gamemode = GameMode.SURVIVAL;
+                    } else {
+                        cs.sendMessage(ChatColor.RED + "Sorry gamemode must be of type 0, 1 or 2.");
+                        return false;
+                    }
+                    config.set("worlds." + worldName + ".defaultMode", gamemode.name());
+                    
+                    cs.sendMessage(ChatColor.DARK_AQUA + "Default mode for world " + worldName + " has been set to " + gamemode.name().toLowerCase() +".");
+                } else {
+                    cs.sendMessage(ChatColor.RED + "Sorry only players may directly set default gamemode.");
+                }
+            } else if (args.length == 3) {
+                World w = modWorlds.getServer().getWorld(args[1]);
+                if (w == null) {
+                    cs.sendMessage(ChatColor.RED + "Sorry that world doesn't exist.");
+                    return false;
+                }
+                String worldName = w.getName();
+                FileConfiguration config = modWorlds.getConfig();
+                GameMode gamemode;
+                if (args[2].equalsIgnoreCase("1")) {
+                    gamemode = GameMode.CREATIVE;
+                } else if (args[2].equalsIgnoreCase("2")) {
+                    gamemode = GameMode.ADVENTURE;
+                } else if (args[2].equalsIgnoreCase("0")) {
+                    gamemode = GameMode.SURVIVAL;
+                } else {
+                    cs.sendMessage(ChatColor.RED + "Sorry gamemode must be of type 0, 1 or 2.");
+                    return false;
+                }
+                config.set("worlds." + worldName + ".defaultMode", gamemode.name());
+                cs.sendMessage(ChatColor.DARK_AQUA + "Default mode for world " + worldName + " has been set to " + gamemode.name().toLowerCase() + ".");
+
+            } else {
+                cs.sendMessage(ChatColor.RED + "Incorrect Usage.");
+                cs.sendMessage(ChatColor.RED + "Correct usage. /mw mode <gamemode> or /mw mode <worldname> <gamemode>.");
             }
         } else {
             cs.sendMessage(ChatColor.RED + "Unknown Command. Use /mw help for help.");

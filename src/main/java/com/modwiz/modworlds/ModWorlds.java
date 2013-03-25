@@ -28,6 +28,32 @@ public class ModWorlds extends JavaPlugin
         }
         
         this.getServer().getPluginCommand("worldmanager").setExecutor(new CommandHandler(this));
+        loadSettings();
+        
+        this.getServer().getPluginManager().registerEvents(new EventListener(this), plugin);
+    }
+    
+    @Override
+    public void onDisable() {
+        saveSettings();
+    }
+    
+    public void saveSettings() {
+        if (!getConfig().contains("worlds")) {
+            getConfig().createSection("worlds");
+        }
+        ConfigurationSection worldsNode = getConfig().getConfigurationSection("worlds");
+        for (Map.Entry<String, WorldType> world : worldList.entrySet()) {
+            if (!worldsNode.contains(world.getKey())) {
+                worldsNode.createSection(world.getKey());
+            }
+            ConfigurationSection worldNode = worldsNode.getConfigurationSection(world.getKey());
+            worldNode.set("type", world.getValue().getName());
+        }
+        saveConfig();
+    }
+    
+    public void loadSettings() {
         if (!getConfig().contains("worlds")) {
             getConfig().createSection("worlds");
             saveConfig();
@@ -44,22 +70,6 @@ public class ModWorlds extends JavaPlugin
         }
         
         loadWorlds();
-    }
-    
-    @Override
-    public void onDisable() {
-        if (!getConfig().contains("worlds")) {
-            getConfig().createSection("worlds");
-        }
-        ConfigurationSection worldsNode = getConfig().getConfigurationSection("worlds");
-        for (Map.Entry<String, WorldType> world : worldList.entrySet()) {
-            if (!worldsNode.contains(world.getKey())) {
-                worldsNode.createSection(world.getKey());
-            }
-            ConfigurationSection worldNode = worldsNode.getConfigurationSection(world.getKey());
-            worldNode.set("type", world.getValue().getName());
-        }
-        saveConfig();
     }
     private void loadWorlds() {
         for (Map.Entry<String,WorldType> world : worldList.entrySet()) {
@@ -78,5 +88,6 @@ public class ModWorlds extends JavaPlugin
     public void createWorld(String worldName, WorldType type) {
         getServer().createWorld(new WorldCreator(worldName).type(type));
         worldList.put(worldName, type);
+        saveSettings();
     }
 }
